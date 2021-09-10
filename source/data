@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source ./argument "$@" -s 4
+ITEMS=$(${system[CURL]} -sH "authorization:$TOKEN" ${server[HOST]}api/v1/getLogData/${PLANT}/${DEVICE}/${LOG}?samplingTime=${SAMPLING})
+readarray -t NAMES < <(${system[JSON]} -rc .items[].name <<< ${ITEMS})
+result=$(printf ",%s" "${NAMES[@]}")
+echo Timestamp$result > ${DFOLDER}/${LOG}
+
+readarray -t DATA < <(${system[JSON]} -rc .data[] <<< ${ITEMS})
+for item in "${DATA[@]}"; do
+  readarray -t result < <(${system[JSON]} -rc .[] <<< ${item})
+  result=$(printf ",%s" "${result[@]}")
+  echo "${result:1}" >> ${DFOLDER}/${LOG}
+done

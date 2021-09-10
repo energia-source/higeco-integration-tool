@@ -1,0 +1,80 @@
+#!/bin/bash
+
+if [ $EUID -ne 0 ]; then
+  echo "$0: is not running as root. Aborting."
+  exit 1
+fi
+
+source ./configuration
+
+declare -i SHELL=0
+
+while getopts s:t:f:d:p:l: options; do
+   case ${options} in
+      s) SHELL=${OPTARG} ;;
+      t) TOKEN=${OPTARG} ;;
+      f) PLANT=${OPTARG} ;;
+      d) DEVICE=${OPTARG} ;;
+      p) PATH=${OPTARG} ;;
+      l) LOG=${OPTARG} ;;
+   esac
+done
+
+declare -a RESPONSE=()
+
+if [[ -z "${server['HOST']:-}" ]] ; then
+  RESPONSE+=("Set server[HOST] in configuration file.")
+fi
+
+if [[ -z "${system['CURL']:-}" ]] || ! [ $(which ${system[CURL]} 2>/dev/null) ] ; then
+  RESPONSE+=("Set system[CURL] in configuration file.")
+fi
+
+if [[ -z "${system['JSON']:-}" ]] || ! [ $(which ${system[JSON]} 2>/dev/null) ] ; then
+  RESPONSE+=("Set system[JSON] in configuration file.")
+fi
+
+if [[ -z "${system['PIDC']:-}" ]] || ! [ $(which ${system[PIDC]} 2>/dev/null) ] ; then
+  RESPONSE+=("Set system[PIDC] in configuration file.")
+fi
+
+if ! [ -v USERNAME ] && [ ${SHELL} -eq 0 ] ; then
+  RESPONSE+=("-u: Specifies the username.")
+fi
+
+if ! [ -v PATH ] && [ ${SHELL} -ge 0 ] ; then
+  RESPONSE+=("-p: Specifies destination folder path")
+fi
+
+if ! [ -v PASSWORD ] && [ ${SHELL} -eq 0 ] ; then
+  RESPONSE+=("-p: Specifies the password.")
+fi
+
+if ! [ -v SAMPLING ] && [ ${SHELL} -eq 0 ] ; then
+  RESPONSE+=("-a: Specifies the sampling time.")
+fi
+
+if ! [ -v TOKEN ] && [ ${SHELL} -ge 1 ] ; then
+  RESPONSE+=("-t: Specifies the authentication token.")
+fi
+
+if ! [ -v PLANT ] && [ ${SHELL} -ge 2 ] ; then
+  RESPONSE+=("-p: Specifies the plant id.")
+fi
+
+if ! [ -v DEVICE ] && [ ${SHELL} -ge 3 ] ; then
+  RESPONSE+=("-d: Specifies the device id.")
+fi
+
+if ! [ -v LOG ] && [ ${SHELL} -ge 4 ] ; then
+  RESPONSE+=("-l: Specifies the log id.")
+fi
+
+if [ ${#RESPONSE[@]} -ne 0 ] ; then
+  printf '%s\n' "${RESPONSE[@]}"
+  $pid=$(${system[PIDC]} crond)
+  kill -TERM $pid 2>/dev/null
+  exit 1;
+fi
+
+unset RESPONSE

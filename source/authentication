@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source ./argument "$@"
+
+TOKEN=$(${system[JSON]} -nc --arg username "$USERNAME" --arg password "$PASSWORD" '{"username":$username,"password":$password}')
+TOKEN=$(${system[CURL]} -sX POST --data ${TOKEN} ${server[HOST]}api/v1/authenticate | ${system[JSON]} -r .token)
+
+./plant -t ${TOKEN}

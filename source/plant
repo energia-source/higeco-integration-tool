@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source ./argument "$@" -s 1
+
+readarray -t PLANTS < <(${system[CURL]} -sH "authorization:$TOKEN" ${server[HOST]}api/v1/plants | ${system[JSON]} -r .[].id)
+for item in "${PLANTS[@]}"; do
+    ./device "$@" -f ${item}
+done

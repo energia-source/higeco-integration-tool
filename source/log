@@ -1,0 +1,10 @@
+#!/bin/bash
+
+source ./argument "$@" -s 3
+readarray -t LOGS < <(${system[CURL]} -sH "authorization:$TOKEN" ${server[HOST]}api/v1/plants/${PLANT}/devices/${DEVICE}/logs | ${system[JSON]} -rc .[])
+for item in "${LOGS[@]}"; do
+  name=$(${system[JSON]} -r .name <<< ${item})
+  if [[ ${name} =~ ${EXPRESSIONMATCHES} ]]; then
+    ./data "$@" -l $(${system[JSON]} -r .id <<< ${item})
+  fi
+done
